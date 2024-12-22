@@ -95,10 +95,11 @@ async function initAMap() {
     map: map,
   });
   location = new AMap.Geolocation({
-    enableHighAccuracy: true,
-    timeout: 10000,
+    // enableHighAccuracy: true,
+    // timeout: 10000,
     showButton: false,
     buttonPosition: 'RB',
+    convert:true,
     zoomToAccuracy: true,
     buttonOffset: new AMap.Pixel(10, 20),
   });
@@ -138,7 +139,7 @@ function getRoute() {
     loading.value = false
   });
 }
-
+//! 
 function meters2kilometers(meters: number) {
   return meters > 1000 ? (meters / 1000).toFixed(2) + '公里' : meters + '米'
 }
@@ -180,6 +181,7 @@ function querySearchAsync(queryString: string, cb: (arg: any) => void) {
     }
   });
 }
+
 function startNav() {
   if (navStarted.value) {
     return
@@ -200,12 +202,20 @@ function startNav() {
     icon: endIcon,
     offset: new AMap.Pixel(-13, -30)
   });
-
+  console.log('endMarker', navStarted);
+  
   // 将 markers 添加到地图
   map.add([endMarker]);
   getCurrentLocation((currLocation: number[]) => {
+    // 更新marker的位置
     endMarker.setPosition(currLocation)
+
+    //! 调整地图
     routeNav(currLocation)
+    /* 
+    1. 确认导航是否结束
+    2. 如果没有结束，则获取当前的step
+    */
   })
 }
 
@@ -219,7 +229,7 @@ function routeNav(currLocation: number[]) {
   currStep.value = getCurrStep(currLocation)
   heading.value = -bearing(currStep.value.startPoint, currStep.value.endPoint)
   map.setCenter(currLocation)
-  map.setZoom(16)
+  // map.setZoom(16)
   map.setRotation(heading.value)
 }
 
@@ -227,6 +237,7 @@ function checkIsCloseToEndpoint() {
   if (!currStep.value?.endPoint) {
     return false
   }
+  // 测算当前点距离结束点之间的距离
   const distance = pointToPointDistance({
     type: 'Point',
     coordinates: currStep.value!.endPoint
@@ -249,19 +260,34 @@ function getCurrStep(currLocation: number[]) {
   return currentRoute.value.steps![nearestPoint.properties.index]
 }
 
-const mock = false
+const mock = true
 const mockSpeed = 1000
 let mockTimer: any
 function getCurrentLocation(cb: (arg: number[]) => void) {
   if (mock) {
     clearInterval(mockTimer)
     mockTimer = setInterval(() => {
+      location.getCurrentPosition(function (status: string, result: any) {
+        console.log("---result",result);
+        
+        if (status == 'complete') {
+          const  {lat,lng} = result.position
+          const position =  [lng,lat]
+          console.log("---result",position);
+          cb(position)
+        } else {
+          console.log('result::: ', result);
+        }
+      });
+      return 
       let currentTimestamp = new Date().getTime()
+      // 得到已经行进的秒数
       let runTime = (currentTimestamp - startTimestamp.value) / 1000
       for (let item of currentRoute.value.steps!) {
         if (runTime < item.time) {
           let distance = pointToPointDistance(item.startPoint, item.endPoint)
-          let speed = (distance / item.time) * mockSpeed
+          let speed = (distance / item.time) * mockSpeed  //! 想想这个公式
+          // 得到速度
           let currentDistance = speed * runTime
           // 得到一条线段最近的点的位置
           try {
@@ -295,17 +321,7 @@ function getCurrentLocation(cb: (arg: number[]) => void) {
     }, 100)
     return
   }
-  location.getCurrentPosition(function (status: string, result: any) {
-    console.log("---result");
-    
-    if (status == 'complete') {
-      const  {lat,lng} = result.position
-      const position =  [lng,lat]
-      cb(position)
-    } else {
-      console.log('result::: ', result);
-    }
-  });
+  
 }
 </script>
 
