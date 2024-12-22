@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/utils/mockposition.ts","./src/utils/request.ts","./src/app.vue","./src/components/amap.vue"],"version":"5.7.2"}
