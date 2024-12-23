@@ -273,8 +273,15 @@ function getCurrentLocation(cb: (arg: number[]) => void) {
         if (status == 'complete') {
           const  {lat,lng} = result.position
           const position =  [lng,lat]
-          console.log("---result",position);
-          cb(position)
+         
+          AMap.convertFrom(position, 'gps', function (status, result) {
+            if (result.info === 'ok') {
+             const {lng, lat} = result.locations[0]
+              // console.log('lnglats', [lat,lng]);
+              cb([lng,lat])
+            }
+          });
+          
         } else {
           console.log('result::: ', result);
         }
@@ -318,7 +325,7 @@ function getCurrentLocation(cb: (arg: number[]) => void) {
           break
         }
       }
-    }, 100)
+    }, 1000)
     return
   }
   
